@@ -19,4 +19,6 @@
     <string name="roll">Roll</string>
     <string name="inclination">Inclination</string>
     <string name="g_accuracy">(G)Accuracy</string>
+    <string name="sight_description">Sight is for aiming the satellites. It is timer as well.</string>
+    <string name="bulls_eye_description">The bull\'s eye tell if aiming satellites by turning red</string>
 </resources>
