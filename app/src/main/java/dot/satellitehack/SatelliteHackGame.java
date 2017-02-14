@@ -1,15 +1,19 @@
 package dot.satellitehack;
 
+import android.location.GpsSatellite;
 import android.text.format.Time;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
-import static dot.satellitehack.Tools.*;
+import static dot.satellitehack.MathTools.*;
 
 /**
  * Created by dixon on 13/2/2017.
  */
+
+enum State {READY, STARTED, OVER}
 
 @SuppressWarnings("deprecation")
 class SatelliteHackGame {
@@ -17,10 +21,11 @@ class SatelliteHackGame {
     private List<Satellite> satellites;
     private Time startTime;
     private Time endTime;
-    public static final int TIME_LIMIT = 20000;
-    public static final float BULLS_EYE = 0.15f;
+    private State state = null;
+    static final int TIME_LIMIT = 20000;
+    static final float BULLS_EYE = 0.15f;
 
-    public SatelliteHackGame() {
+    SatelliteHackGame() {
         satellites = new ArrayList<>();
         startTime = new Time("GMT+8");
         endTime = new Time("GMT+8");
@@ -30,11 +35,11 @@ class SatelliteHackGame {
         return level;
     }
 
-    public void setLevel(int level) {
+    void setLevel(int level) {
         this.level = level;
     }
 
-    public List<Satellite> getSatellites() {
+    List<Satellite> getSatellites() {
         return satellites;
     }
 
@@ -42,35 +47,53 @@ class SatelliteHackGame {
         this.satellites = satellites;
     }
 
-    public void addSatellite(Satellite satellite) {
+    private void addSatellite(Satellite satellite) {
         satellites.add(satellite);
+    }
+
+    void addSatellites(List<GpsSatellite> satList) {
+        if (countSatellite() >= level || satList.size() <= 0) return;
+        addSatellite(
+                new Satellite(
+                        satList.remove(
+                                random.nextInt(satList.size())
+                        )
+                )
+        );
+        addSatellites(satList);
     }
 
     public Satellite getSatellite(int index) {
         return satellites.get(index);
     }
 
-    public boolean removeSatellite(Satellite satellite) {
+    boolean removeSatellite(Satellite satellite) {
         return satellites.remove(satellite);
     }
 
-    public int countSatellite() {
+    int countSatellite() {
         return satellites.size();
     }
 
-    public List<Float> getAccuracies() {
+    private List<Float> getAccuracies() {
         return Satellite.getAccuracies(satellites);
     }
 
-    public float getAvgAccuracy() {
+    float getAvgAccuracy() {
         return average(getAccuracies());
+    }
+
+    void setAccuracies(float azimuth, float inclination) {
+        for (Satellite sat : satellites) {
+            sat.setAccuracy(azimuth, inclination);
+        }
     }
 
     public Time getStartTime() {
         return startTime;
     }
 
-    public SatelliteHackGame startTimer() {
+    SatelliteHackGame startTimer() {
         startTime.setToNow();
         return this;
     }
@@ -79,13 +102,26 @@ class SatelliteHackGame {
         return endTime;
     }
 
-    public SatelliteHackGame stopTimer() {
+    SatelliteHackGame stopTimer() {
         endTime.setToNow();
         return this;
     }
 
-    public int getTimeUsed() {
+    int getTimeUsed() {
         return (endTime.minute - startTime.minute) * 60
                 + endTime.second - startTime.second;
+    }
+
+    State getState() {
+        return state;
+    }
+
+    void setState(State state) {
+        this.state = state;
+    }
+
+    @Override
+    public String toString() {
+        return String.format(Locale.getDefault(), "Satellite Hack Game Lv.%d", level);
     }
 }

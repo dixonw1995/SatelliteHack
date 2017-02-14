@@ -18,9 +18,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void play(View view) {
         EditText countView = (EditText) findViewById(R.id.count);
-        int count = Integer.parseInt(countView.getText().toString());
+        int level = Integer.parseInt(countView.getText().toString());
         Intent intent = new Intent(this, SatelliteHack.class);
-        intent.putExtra("level", count);
+        intent.putExtra("level", level);
         startActivityForResult(intent, SAT_HACK_ID);
     }
 
