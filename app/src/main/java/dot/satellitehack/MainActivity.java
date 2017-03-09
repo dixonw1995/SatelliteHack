@@ -19,16 +19,20 @@ public class MainActivity extends AppCompatActivity {
     public void play(View view) {
         EditText countView = (EditText) findViewById(R.id.count);
         int level = Integer.parseInt(countView.getText().toString());
-        Intent intent = new Intent(this, SatelliteHack.class);
+        Intent intent = new Intent(this, SatelliteHackActivity.class);
         intent.putExtra("level", level);
         startActivityForResult(intent, SAT_HACK_ID);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == SAT_HACK_ID && resultCode == RESULT_OK) {
-            boolean success = data.getBooleanExtra(SatelliteHack.RESULT, false);
-            int second = data.getIntExtra(SatelliteHack.TIME, -1);
+        if (requestCode == SAT_HACK_ID) {
+            boolean success = false;
+            int second = -1;
+            if (null != data) {
+                success = data.getBooleanExtra(SatelliteHackActivity.RESULT, success);
+                second = data.getIntExtra(SatelliteHackActivity.TIME, second);
+            }
             TextView result = (TextView) findViewById(R.id.result);
             TextView time = (TextView) findViewById(R.id.time);
             if (success) {

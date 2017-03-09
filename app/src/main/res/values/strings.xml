@@ -23,4 +23,6 @@
     <string name="time">You took %1$ds to hack.</string>
     <string name="good_luck">Good luck next time</string>
     <string name="play">Play</string>
+    <string name="empty_view">Empty view for layout setting</string>
+    <string name="loading">loading</string>
 </resources>

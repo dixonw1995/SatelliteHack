@@ -9,10 +9,6 @@ import java.util.Locale;
 
 import static dot.satellitehack.MathTools.*;
 
-/**
- * Created by dixon on 13/2/2017.
- */
-
 enum State {READY, STARTED, OVER}
 
 @SuppressWarnings("deprecation")
