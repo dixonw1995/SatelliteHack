@@ -1,17 +1,11 @@
 package dot.satellitehack;
 
-import android.location.Criteria;
-
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Random;
 
 import static java.lang.Math.*;
 import static java.lang.Float.NaN;
-
-/**
- * Created by dixon on 13/2/2017.
- */
 
 class MathTools {
     static DecimalFormat decimalFormat = new DecimalFormat("0.0");

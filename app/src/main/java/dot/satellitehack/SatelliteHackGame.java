@@ -9,7 +9,28 @@ import java.util.Locale;
 
 import static dot.satellitehack.MathTools.*;
 
-enum State {READY, STARTED, OVER}
+enum State {
+    READY, STARTED, OVER, SUCCESS, FAILURE;
+
+    //exception when operation doesn't match state
+    static class StateOverException extends RuntimeException {
+        StateOverException(){
+            super();
+        }
+
+        StateOverException(String message){
+            super(message);
+        }
+
+        StateOverException(String message, Throwable cause){
+            super(message, cause);
+        }
+
+        StateOverException(Throwable cause){
+            super(cause);
+        }
+    }
+}
 
 @SuppressWarnings("deprecation")
 class SatelliteHackGame {
@@ -118,6 +139,6 @@ class SatelliteHackGame {
 
     @Override
     public String toString() {
-        return String.format(Locale.getDefault(), "Satellite Hack Game Lv.%d", level);
+        return String.format(Locale.getDefault(), "Satellite Hack Game Lv.%d. State: %s", level, state);
     }
 }

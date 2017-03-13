@@ -2,12 +2,12 @@ package dot.satellitehack;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -36,18 +36,15 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
-/*
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.load.resource.gif.GifDrawable;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
-*/
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -61,7 +58,7 @@ import static dot.satellitehack.MathTools.*;
 @SuppressWarnings("deprecation")
 public class SatelliteHackActivity extends AppCompatActivity {
     //log tag
-    private static final String MAIN_TAG = "Satellite Hack";
+    private static final String GAME_TAG = "Satellite Hack";
     private static final String GPS_TAG = "GPS";
     private static final String SENSOR_TAG = "Sensor";
     private static final String UI_TAG = "UI";
@@ -72,6 +69,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
     //game managers
     private SatelliteHackGame game = new SatelliteHackGame();
     private StartGame startGame = new StartGame();
+    private Intent intent;
 
     //GPS system variables
     private static final int GPS_PERMISSION = 695;
@@ -98,7 +96,6 @@ public class SatelliteHackActivity extends AppCompatActivity {
     private MediaPlayer signal;
     private MediaPlayer hit;
     private Vibrator vibrator;
-    //private GifDrawable noiseImage;
 
     //Animators
     private ObjectAnimator rotateAnimator;
@@ -110,25 +107,19 @@ public class SatelliteHackActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        intent = new Intent();
+        Log.v(UI_TAG, "Create activity.");
         setContentView(R.layout.activity_satellite_hack);
         initGame();
         startGame.execute();
     }
 
-    /*
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        ((AnimationDrawable) ((ImageView)
-                findViewById(R.id.loading)).getDrawable()).start();
-    }
-    */
-
     //register listeners when resumed
     @Override
     protected void onResume() {
         super.onResume();
-        if (!game.getState().equals(OVER)) {
+        Log.v(UI_TAG, "Resume activity.");
+        if (game.getState().compareTo(OVER) < 0) {
             satelliteFinder.setShowToast(true);
             sm.registerListener(seListener, aSensor, SENSOR_DELAY);
             sm.registerListener(seListener, mSensor, SENSOR_DELAY);
@@ -143,6 +134,9 @@ public class SatelliteHackActivity extends AppCompatActivity {
     @Override
     public void onPause() {
         super.onPause();
+        Log.v(UI_TAG, "Pause activity.");
+        if (game.getState().compareTo(OVER) >= 0)
+            finish();
         satelliteFinder.setShowToast(false);
         sm.unregisterListener(seListener);
         noise.pause();
@@ -156,6 +150,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
         if (requestCode == GPS_PERMISSION) {
             if (!(grantResults.length > 0 &&
                     grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                Log.e(GPS_TAG, "No GPS permission.");
                 setResult(RESULT_CANCELED);
                 finish();
             }
@@ -164,14 +159,19 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        Log.v(UI_TAG, "Back button is pressed");
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("Give up Generator")
                 .setMessage("Are you sure you want to exit?")
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        //gameOver(false);
-                        finish();
+                        Log.i(UI_TAG, "User is leaving.");
+                        if (game.getState().compareTo(OVER) >= 0)
+                            finish();
+                        else{
+                            gameOver(false, true);
+                        }
                     }
                 })
                 .setNegativeButton("Cancel", null)
@@ -180,10 +180,20 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
     //wait until user turn on GPS and then get the satellites
     private class SatelliteFinder extends AsyncTask<Void, Void, Void> {
+        private Toast message;
         private boolean showToast = true;
 
         void setShowToast(boolean showToast) {
             this.showToast = showToast;
+        }
+
+        @SuppressLint("ShowToast")
+        @Override
+        protected void onPreExecute() {
+            message = Toast.makeText(
+                    SatelliteHackActivity.this,
+                    "Please turn on GPS...",
+                    Toast.LENGTH_SHORT);
         }
 
         @Override
@@ -194,9 +204,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
                     publishProgress();
                 try {
                     Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                } catch (InterruptedException ignored) {}
             }
             Log.i(GPS_TAG, "GPS is on.");
             return null;
@@ -204,10 +212,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
         @Override
         protected void onProgressUpdate(Void... voids) {
-            Toast.makeText(
-                    SatelliteHackActivity.this,
-                    "Please turn on GPS...",
-                    Toast.LENGTH_SHORT).show();
+            message.show();
         }
 
         @Override
@@ -223,6 +228,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
                         new String[]{Manifest.permission.READ_CONTACTS},
                         GPS_PERMISSION);
             }
+            //register location and gps status listener
             String bestProvider = locationManager.getBestProvider(criteria, true);
             locationManager.addGpsStatusListener(gsListener);
             locationManager.requestLocationUpdates(
@@ -238,11 +244,11 @@ public class SatelliteHackActivity extends AppCompatActivity {
         public void onGpsStatusChanged(int event) {
             switch (event) {
                 case GpsStatus.GPS_EVENT_FIRST_FIX:
-                    Log.i(GPS_TAG, "GPS system has received its first fix");
+                    Log.i(GPS_TAG, "GPS system has received its first fix.");
                     break;
                 //GPS satellite status changed
                 case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
-                    Log.i(GPS_TAG, "GPS system report status");
+                    Log.i(GPS_TAG, "GPS system report status.");
                     if (ActivityCompat.checkSelfPermission(SatelliteHackActivity.this,
                             Manifest.permission.ACCESS_FINE_LOCATION) !=
                             PackageManager.PERMISSION_GRANTED &&
@@ -254,7 +260,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
                                 GPS_PERMISSION);
                     }
 
-                    Log.i(GPS_TAG, "Set satellite list");
+                    Log.i(GPS_TAG, "Set satellite list.");
                     //get satellites from locationManager
                     GpsStatus gpsStatus = locationManager.getGpsStatus(null);
                     int maxSatellites = gpsStatus.getMaxSatellites();
@@ -271,15 +277,15 @@ public class SatelliteHackActivity extends AppCompatActivity {
                     //get satellites once only. remove all GPS listeners
                     locationManager.removeGpsStatusListener(gsListener);
                     locationManager.removeUpdates(locationListener);
-                    Log.i(GPS_TAG, "GPS system has stopped");
+                    Log.i(GPS_TAG, "GPS system has stopped.");
                     hasSatellites = true;
                     showSatellite(game.getSatellites());
                     break;
                 case GpsStatus.GPS_EVENT_STARTED:
-                    Log.i(GPS_TAG, "GPS system has started");
+                    Log.i(GPS_TAG, "GPS system has started.");
                     break;
                 case GpsStatus.GPS_EVENT_STOPPED:
-                    Log.i(GPS_TAG, "GPS system has stopped");
+                    Log.i(GPS_TAG, "GPS system has stopped.");
                     break;
             }
         }
@@ -295,13 +301,13 @@ public class SatelliteHackActivity extends AppCompatActivity {
         public void onStatusChanged(String provider, int status, Bundle extras) {
             switch (status) {
                 case LocationProvider.AVAILABLE:
-                    Log.i(GPS_TAG, "GPS system is available");
+                    Log.v(GPS_TAG, "GPS system is available");
                     break;
                 case LocationProvider.OUT_OF_SERVICE:
-                    Log.i(GPS_TAG, "GPS system is out of service");
+                    Log.v(GPS_TAG, "GPS system is out of service");
                     break;
                 case LocationProvider.TEMPORARILY_UNAVAILABLE:
-                    Log.i(GPS_TAG, "GPS system is temporarily unavailable");
+                    Log.v(GPS_TAG, "GPS system is temporarily unavailable");
                     break;
             }
         }
@@ -330,7 +336,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
     //Sensor Listener
     private SensorEventListener seListener = new SensorEventListener() {
         String sensorType, sensorAccuracy;
-        final int SKIP = 0;
+        final int SKIP = 10;
         int count = 0;
 
         @Override
@@ -350,7 +356,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int i) {
-            Log.v(SENSOR_TAG, "Accuracy of sensor has changed");
+            Log.v(SENSOR_TAG, "Accuracy of sensor has changed.");
             if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
                 sensorType = "TYPE_MAGNETIC_FIELD";
             } else { //if(sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
@@ -372,26 +378,9 @@ public class SatelliteHackActivity extends AppCompatActivity {
                 default:
                     sensorAccuracy = "undefined";
             }
-            Log.v(SENSOR_TAG, String.format("%s accuracy is %s now", sensorType, sensorAccuracy));
+            Log.v(SENSOR_TAG, String.format("%s accuracy is %s now.", sensorType, sensorAccuracy));
         }
     };
-
-    //update UI:display and update sight
-    /*private void initSight() {
-        Log.i(UI_TAG, "Initialize sight.");
-        int width = sight.getWidth();
-        int height = sight.getHeight();
-        int shorterSide = min(width, height);
-
-        //draw sight, initial radius represent 50% accuracy
-        float radius = shorterSide * 0.3f;
-        sight.setImageBitmap(drawSight(width, height, radius));
-        //draw bull's eye
-        bullsEyeBmp = new Bitmap[]{
-                drawBullsEye(width, height, radius * 2 * BULLS_EYE),
-                drawBullsEye(width, height, radius * 2 * BULLS_EYE, true)};
-        bullsEye.setImageBitmap(bullsEyeBmp[0]);
-    }*/
 
     public void updateSight() {
         if (!hasSatellites) return;
@@ -404,9 +393,11 @@ public class SatelliteHackActivity extends AppCompatActivity {
         scaleYAnimator.setFloatValues(ratio);
         scaleXAnimator.start();
         scaleYAnimator.start();
+        //see if any satellite is pointed
         boolean accurate = false;
         for (Satellite sat : game.getSatellites()) {
             if (sat.getAccuracy() > 1 - BULLS_EYE) {
+                Log.v(GAME_TAG, "A satellite is hackable.");
                 accurate = true;
                 hackTarget = sat;
                 bullsEye.setImageResource(R.drawable.button);
@@ -421,7 +412,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
     }
 
     private void initAnimator() {
-        //initial animators
+        Log.i(UI_TAG, "Initialize animators.");
         rotateAnimator = ObjectAnimator.ofFloat(sight, "rotation", -1080f);
         rotateAnimator.setDuration(TIME_LIMIT);
         rotateAnimator.setInterpolator(countDownInterpolator);
@@ -433,16 +424,15 @@ public class SatelliteHackActivity extends AppCompatActivity {
         scaleYAnimator.setInterpolator(linearInterpolator);
     }
 
-    //private void initCamView() {
     private void initCamera() {
-        Log.i(UI_TAG, "Set surface view call back");
+        Log.i(UI_TAG, "Set surface view call back.");
         SurfaceView surfaceView = (SurfaceView) findViewById(R.id.camera);
         SurfaceHolder surfaceHolder = surfaceView.getHolder();
         surfaceHolder.setKeepScreenOn(true);
         surfaceHolder.addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder surfaceHolder) {
-                Log.i(UI_TAG, "Turn on camera");
+                Log.i(UI_TAG, "Turn on camera.");
                 camera = Camera.open();
                 camera.setDisplayOrientation(90);
                 if (null != camera) {
@@ -461,6 +451,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
             @Override
             public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
                 if (null != camera) {
+                    Log.i(UI_TAG, "Turn off camera.");
                     camera.stopPreview();
                     camera.release();
                 }
@@ -469,7 +460,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
     }
 
     private void initSound() {
-        Log.v(UI_TAG, "Initialize sound effect");
+        Log.v(UI_TAG, "Initialize sound effect.");
         noise = MediaPlayer.create(this, R.raw.noise);
         noise.setLooping(true);
         noise.setVolume(0.5f, 0.5f);
@@ -485,7 +476,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
     }
 
     private void updateSound(float accuracy) {
-        Log.v(UI_TAG, "Update sound effect");
+        Log.v(UI_TAG, "Update sound effect.");
         int maxVolume = 100;
         float noiseVol = (float) (log(maxVolume - (1 - accuracy) * 100)
                 / log(maxVolume));
@@ -499,34 +490,19 @@ public class SatelliteHackActivity extends AppCompatActivity {
     }
 
     private void initGame() {
-        if (null != game.getState()) return;
+        if (null != game.getState())
+            throw new StateOverException("Game is ready.");
         game.setState(READY);
-        Log.i(MAIN_TAG, "Loading Satellite Hack");
+        Log.i(GAME_TAG, "Loading Satellite Hack.");
 
-        /*
-        GifImageView giv = (GifImageView) findViewById(R.id.loading2);
-        //GifDrawable gd = (GifDrawable) giv.getDrawable();
-        //getResources().getDrawable(R.drawable.dot_loading_gif);
-        //getDrawable(R.drawable.dot_loading_gif);
-        GifDrawable gd;
-        try {
-            gd = new GifDrawable(getResources(), R.drawable.dot_loading_gif);
-            gd.setSpeed(10f);
-            giv.setImageDrawable(gd);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
-
-        /*/create loading scene by Glide
+        //create loading scene by Glide
         Glide.with(this)
-                .load(R.drawable.dot_loading_gif)
+                .load(R.drawable.dot_loading_img)
                 .asGif()
-                .placeholder(R.drawable.black_background)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                //.skipMemoryCache(true)
+                .crossFade()
+                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .into((ImageView) findViewById(R.id.loading));
-        */
+
         //get level and set satellite list
         game.setLevel(
                 getIntent().getIntExtra("level", 2)
@@ -554,16 +530,17 @@ public class SatelliteHackActivity extends AppCompatActivity {
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
     }
 
-    private class StartGame extends AsyncTask<Void, Void, Void> {
+    private class StartGame extends AsyncTask<Void, Void, Void>{
 
         @Override
         protected Void doInBackground(Void... voids) {
-            while (!hasSatellites || game.getState().compareTo(STARTED) >= 0) {
+            if (game.getState().compareTo(STARTED) >= 0)
+                throw new State.StateOverException("Game has been started.");
+            Log.i(GAME_TAG, "Wait til satellites are ready.");
+            while (!hasSatellites) {
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                } catch (InterruptedException ignored) {}
             }
             return null;
         }
@@ -571,11 +548,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             game.setState(STARTED);
-            Log.i(MAIN_TAG, "Start Satellite Hack");
-            /*/remove loading scene
-            ImageView loading = ((ImageView) findViewById(R.id.loading));
-            loading.setVisibility(View.INVISIBLE);
-            loading.setImageDrawable(null);*/
+            Log.i(GAME_TAG, "Start Satellite Hack.");
             //start game UI
             rotateAnimator.start();
             noise.start();
@@ -584,16 +557,24 @@ public class SatelliteHackActivity extends AppCompatActivity {
             new CountDownTimer(TIME_LIMIT, 5000) {
                 @Override
                 public void onTick(long l) {
-                    Log.v(MAIN_TAG, String.format("%ds left", l / 1000));
+                    Log.v(GAME_TAG, String.format("%ds left", l / 1000));
                 }
 
                 @Override
                 public void onFinish() {
-                    Log.i(MAIN_TAG, "Satellite Hack fail.(timer)");
-                    gameOver(false);
+                    try {
+                        gameOver(false);
+                        Log.i(GAME_TAG, "Satellite Hack fail.(timer)");
+                    } catch (StateOverException e) {
+                        Log.v(GAME_TAG, "Game is over");
+                    }
                 }
             }.start();
             game.startTimer();
+            //remove loading scene
+            ImageView loading = ((ImageView) findViewById(R.id.loading));
+            loading.setImageDrawable(null);
+            findViewById(R.id.loading_bg).setVisibility(View.GONE);
         }
 
     }
@@ -605,6 +586,8 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
         @Override
         protected Void doInBackground(Void... voids) {
+            //get orientation to calculate accuracies
+            Log.v(SENSOR_TAG, "Get azimuth and inclination for calculation.");
             SensorManager.getRotationMatrix(r, null, accelerometerValues, magneticFieldValues);
             SensorManager.getOrientation(r, orientations);
             azimuth = getCameraAzimuth(orientations[0], orientations[1], orientations[2]);
@@ -616,6 +599,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             if (!game.getState().equals(STARTED)) return;
+            Log.v(UI_TAG, "Update UI to show accuracy");
             updateSight();
             updateSound();
             satelliteCountView.setText(String.valueOf(game.countSatellite()));
@@ -626,51 +610,121 @@ public class SatelliteHackActivity extends AppCompatActivity {
     }
 
     public void hack(View view) {
-        if (!game.getState().equals(STARTED) || null == hackTarget) return;
+        if (!game.getState().equals(STARTED))
+            throw new StateOverException("Game is over or not started yet");
+        if (null == hackTarget)
+            throw new NoTargetException("No hacking target");
+        //try to remove target satellite
         if (game.removeSatellite(hackTarget)) {
             vibrator.vibrate(200);
             hit.start();
             int satelliteCount = game.countSatellite();
-            Log.i(MAIN_TAG, String.format(
+            Log.i(GAME_TAG, String.format(
                     "Satellite hack success. %d satellite(s)' left.", satelliteCount));
             satelliteCountView.setText(String.valueOf(game.countSatellite()));
             if (satelliteCount == 0) {
-                Log.i(MAIN_TAG, "All satellites are hacked. Stage clear.");
+                Log.i(GAME_TAG, "All satellites are hacked. Stage clear.");
                 gameOver(true);
             }
             hackTarget = null;
         }
     }
 
+    //Exception when no hackable satellite but try to hack
+    private static class NoTargetException extends RuntimeException {
+        NoTargetException(){
+            super();
+        }
+
+        NoTargetException(String message){
+            super(message);
+        }
+
+        NoTargetException(String message, Throwable cause){
+            super(message, cause);
+        }
+
+        NoTargetException(Throwable cause){
+            super(cause);
+        }
+    }
+
     //return result to main activity
     private void gameOver(boolean success) {
-        if (game.getState().compareTo(OVER) >= 0) return;
-        game.setState(OVER);
+        gameOver(success, false);
+    }
 
-        Log.i(MAIN_TAG, "Satellite Hack is over. Go back to main game.");
+    private void gameOver(boolean success, boolean finish) {
+        if (game.getState().compareTo(OVER) >= 0)
+            throw new StateOverException("Game is over.");
+        Log.i(GAME_TAG, "Satellite Hack is over.");
+        game.setState(OVER);
+        sm.unregisterListener(seListener);
         game.stopTimer();
-        Intent intent = new Intent();
-        intent.putExtra(RESULT, success);
-        intent.putExtra(TIME, game.getTimeUsed());
-        setResult(RESULT_OK, intent);
+
         if (!success) {
-            ImageView noiseView = (ImageView)findViewById(R.id.noise);
-            AnimationDrawable frameAnimation = (AnimationDrawable) noiseView.getDrawable();
-            //frameAnimation.setCallback(noiseView);
-            frameAnimation.start();
+            Log.i(GAME_TAG, "User failed to find all satellites.");
+            game.setState(FAILURE);
+            intent.putExtra(RESULT, false);
+            intent.putExtra(TIME, game.getTimeUsed());
+            setResult(RESULT_OK, intent);
+            if (finish) {
+                finish();
+                return;
+            }
+
+            //display noise scene to tell failure
+            Glide.with(this)
+                    .load(R.drawable.noise_gif)
+                    .asGif()
+                    .placeholder(R.color.black)
+                    .crossFade()
+                    .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                    .into((ImageView) findViewById(R.id.noise));
             updateSound(0f);
             findViewById(R.id.failure).setVisibility(View.VISIBLE);
-            Toast.makeText(this, "Press BACK to leave", Toast.LENGTH_LONG).show();
-            sm.unregisterListener(seListener);
+            Toast.makeText(this, "Game Over. Press BACK to leave", Toast.LENGTH_LONG).show();
         }
         else {
+            Log.i(GAME_TAG, "User succeeds.");
+            game.setState(SUCCESS);
+            intent.putExtra(RESULT, true);
+            intent.putExtra(TIME, game.getTimeUsed());
+            setResult(RESULT_OK, intent);
             finish();
         }
     }
 
     //debug display
+    int count = 0;
+    boolean listening = false;
+
+    public void showDebug(View view) {
+        count++;
+        if (count > 20) gameOver(true);
+        if (count > 3)
+            findViewById(R.id.developerView)
+                    .setVisibility(View.VISIBLE);
+        if (!listening && count >= 2) {
+            view.setOnLongClickListener(removeCamera);
+            listening = true;
+        }
+    }
+
+    public View.OnLongClickListener removeCamera =
+            new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View view) {
+            ((RelativeLayout)
+                    (findViewById(R.id.camera).getParent()
+            )).removeView(findViewById(R.id.camera));
+            findViewById(R.id.author).setOnLongClickListener(null);
+            return false;
+        }
+    };
+
     //test satellite fetching
-    public void showSatellite(List<Satellite> satellites) {/*
+    public void showSatellite(List<Satellite> satellites) {
         if (!hasSatellites) return;
         TableLayout developerView =
                 (TableLayout) findViewById(R.id.developerView);
@@ -706,14 +760,14 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
             developerView.addView(satelliteRow);
         }
-    */}
+    }
 
     //test orientation calculation
-    private void showOrientation(float azimuth, float inclination) {/*
+    private void showOrientation(float azimuth, float inclination) {
         ((TextView) findViewById(R.id.converted_azimuth)).setText(
                 decimalFormat.format(azimuth));
         ((TextView) findViewById(R.id.converted_inclination)).setText(
                 decimalFormat.format(inclination));
-    */}
+    }
 
 }

@@ -25,4 +25,9 @@
     <string name="play">Play</string>
     <string name="empty_view">Empty view for layout setting</string>
     <string name="loading">loading</string>
+    <string name="loading_bg_description">Background of loading image</string>
+    <string name="loading_description">Loading</string>
+    <string name="noise_description">Transmission noise</string>
+    <string name="disconnected_message">Disconnected with satellites</string>
+    <string name="author_tag">By team dot 2017</string>
 </resources>

@@ -35,10 +35,11 @@
             android:textSize="36sp" />
 
         <LinearLayout
-            android:orientation="horizontal"
+            android:id="@+id/bulls_eye_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:weightSum="1" >
+            android:orientation="horizontal"
+            android:weightSum="1">
 
             <Space
                 android:layout_width="0dp"
@@ -49,11 +50,11 @@
                 android:id="@+id/bulls_eye"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:src="@drawable/bullseye"
                 android:layout_weight="0.2"
-                android:onClick="hack"
                 android:clickable="false"
-                android:contentDescription="@string/bulls_eye_description" />
+                android:contentDescription="@string/bulls_eye_description"
+                android:onClick="hack"
+                android:src="@drawable/bullseye" />
 
             <Space
                 android:layout_width="0dp"
@@ -74,21 +75,19 @@
 
     </RelativeLayout>
 
-    <!--pl.droidsonroids.gif.GifImageView
-        android:id="@+id/loading2"
+    <ImageView
+        android:id="@+id/loading_bg"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:background="@color/black" />
+        android:layout_height="match_parent"
+        app:srcCompat="@android:color/black"
+        android:contentDescription="@string/loading_bg_description" />
 
-    <pl.droidsonroids.gif.GifImageView
-        android:id="@+id/gifImageView"
+    <ImageView
+        android:id="@+id/loading"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:background="@color/black"
-        android:src="@drawable/dot_loading_gif"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" /-->
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/loading_description" />
 
     <RelativeLayout
         android:id="@+id/failure"
@@ -100,15 +99,18 @@
             android:id="@+id/noise"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/noise_anim"
-            android:scaleType="centerCrop" />
+            android:background="@color/black"
+            android:scaleType="fitXY"
+            android:contentDescription="@string/noise_description" />
 
         <ImageView
             android:id="@+id/fail_message"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="50dp"
-            app:srcCompat="@drawable/disconnected" />
+            app:srcCompat="@drawable/disconnected"
+            android:contentDescription="@string/disconnected_message" />
+
     </RelativeLayout>
 
     <TableLayout
@@ -117,7 +119,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true">
+        android:layout_alignParentStart="true"
+        android:visibility="invisible" >
 
         <TableRow
             android:layout_width="match_parent"
@@ -176,6 +179,16 @@
         </TableRow>
 
     </TableLayout>
+
+    <TextView
+        android:id="@+id/author"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/author_tag"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:onClick="showDebug" />
 
 
 </RelativeLayout>
