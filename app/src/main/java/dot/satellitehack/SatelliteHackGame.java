@@ -13,20 +13,20 @@ enum State {
     READY, STARTED, OVER, SUCCESS, FAILURE;
 
     //exception when operation doesn't match state
-    static class StateOverException extends RuntimeException {
-        StateOverException(){
+    static class StateException extends RuntimeException {
+        StateException(){
             super();
         }
 
-        StateOverException(String message){
+        StateException(String message){
             super(message);
         }
 
-        StateOverException(String message, Throwable cause){
+        StateException(String message, Throwable cause){
             super(message, cause);
         }
 
-        StateOverException(Throwable cause){
+        StateException(Throwable cause){
             super(cause);
         }
     }

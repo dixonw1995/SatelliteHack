@@ -32,11 +32,8 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -44,6 +41,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.github.lzyzsd.circleprogress.DonutProgress;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -88,8 +86,12 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
     //UI variables
     private Camera camera;
+    private PingView ping;
     private ImageView sight;
-    private ImageView bullsEye;
+    private DonutProgress accuracy;
+    private GalaxyView galaxy;
+    private SatelliteView satellite;
+//    private ImageView bullsEye;
     private TextView satelliteCountView;
     private Satellite hackTarget;
     private MediaPlayer noise;
@@ -99,10 +101,11 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
     //Animators
     private ObjectAnimator rotateAnimator;
-    private ObjectAnimator scaleXAnimator;
-    private ObjectAnimator scaleYAnimator;
-    private Interpolator countDownInterpolator = new DecelerateInterpolator();
-    private LinearInterpolator linearInterpolator = new LinearInterpolator();
+//    private ObjectAnimator scaleXAnimator;
+//    private ObjectAnimator scaleYAnimator;
+//    private ObjectAnimator alphaAnimator;
+//    private Interpolator countDownInterpolator = new DecelerateInterpolator();
+    private static LinearInterpolator linearInterpolator = new LinearInterpolator();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +113,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
         intent = new Intent();
         Log.v(UI_TAG, "Create activity.");
         setContentView(R.layout.activity_satellite_hack);
+        Log.d(UI_TAG, "XML done");
         initGame();
         startGame.execute();
     }
@@ -385,14 +389,20 @@ public class SatelliteHackActivity extends AppCompatActivity {
     public void updateSight() {
         if (!hasSatellites) return;
         Log.v(UI_TAG, "Update sight.");
-        //0 represent the closest, 2 represent the furthest
-        float ratio = (1 - game.getAvgAccuracy()) * 2;
-        scaleXAnimator.cancel();
-        scaleYAnimator.cancel();
-        scaleXAnimator.setFloatValues(ratio);
-        scaleYAnimator.setFloatValues(ratio);
-        scaleXAnimator.start();
-        scaleYAnimator.start();
+//        //0 represent the closest, 2 represent the furthest
+//        float ratio = (1 - game.getAvgAccuracy()) * 2;
+//        scaleXAnimator.cancel();
+//        scaleYAnimator.cancel();
+//        scaleXAnimator.setFloatValues(ratio);
+//        scaleYAnimator.setFloatValues(ratio);
+//        scaleXAnimator.start();
+//        scaleYAnimator.start();
+//        alphaAnimator.cancel();
+//        alphaAnimator.setFloatValues(game.getAvgAccuracy());
+//        alphaAnimator.start();
+        galaxy.setAlpha(game.getAvgAccuracy());
+
+        accuracy.setProgress(game.getAvgAccuracy());
         //see if any satellite is pointed
         boolean accurate = false;
         for (Satellite sat : game.getSatellites()) {
@@ -400,28 +410,34 @@ public class SatelliteHackActivity extends AppCompatActivity {
                 Log.v(GAME_TAG, "A satellite is hackable.");
                 accurate = true;
                 hackTarget = sat;
-                bullsEye.setImageResource(R.drawable.button);
-                bullsEye.setClickable(true);
+//                bullsEye.setImageResource(R.drawable.button);
+//                bullsEye.setEnabled(true);
+                satellite.setEnabled(true);
                 break;
             }
         }
         if (!accurate) {
-            bullsEye.setImageResource(R.drawable.bullseye);
-            bullsEye.setClickable(false);
+//            bullsEye.setImageResource(R.drawable.bullseye);
+//            bullsEye.setEnabled(false);
+            satellite.setEnabled(false);
         }
     }
 
     private void initAnimator() {
         Log.i(UI_TAG, "Initialize animators.");
-        rotateAnimator = ObjectAnimator.ofFloat(sight, "rotation", -1080f);
+        rotateAnimator = ObjectAnimator.ofFloat(sight, "rotation", 900f);
         rotateAnimator.setDuration(TIME_LIMIT);
-        rotateAnimator.setInterpolator(countDownInterpolator);
-        scaleXAnimator = ObjectAnimator.ofFloat(sight, "scaleX", 1);
-        scaleXAnimator.setDuration(200);
-        scaleXAnimator.setInterpolator(linearInterpolator);
-        scaleYAnimator = ObjectAnimator.ofFloat(sight, "scaleY", 1);
-        scaleYAnimator.setDuration(200);
-        scaleYAnimator.setInterpolator(linearInterpolator);
+//        rotateAnimator.setInterpolator(countDownInterpolator);
+        rotateAnimator.setInterpolator(linearInterpolator);
+//        scaleXAnimator = ObjectAnimator.ofFloat(sight, "scaleX", 1);
+//        scaleXAnimator.setDuration(200);
+//        scaleXAnimator.setInterpolator(linearInterpolator);
+//        scaleYAnimator = ObjectAnimator.ofFloat(sight, "scaleY", 1);
+//        scaleYAnimator.setDuration(200);
+//        scaleYAnimator.setInterpolator(linearInterpolator);
+//        alphaAnimator = ObjectAnimator.ofFloat(galaxy, "alpha", 0.5f);
+//        alphaAnimator.setDuration(TIME_LIMIT);
+//        alphaAnimator.setInterpolator(linearInterpolator);
     }
 
     private void initCamera() {
@@ -491,7 +507,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
 
     private void initGame() {
         if (null != game.getState())
-            throw new StateOverException("Game is ready.");
+            throw new StateException("Game is ready.");
         game.setState(READY);
         Log.i(GAME_TAG, "Loading Satellite Hack.");
 
@@ -519,9 +535,13 @@ public class SatelliteHackActivity extends AppCompatActivity {
         //initialize camera
         initCamera();
 
-        //prepare sight views
+        //prepare view objects
+        ping = (PingView) findViewById(R.id.ping);
         sight = (ImageView) findViewById(R.id.sight);
-        bullsEye = (ImageView) findViewById(R.id.bulls_eye);
+//        bullsEye = (ImageView) findViewById(R.id.bulls_eye);
+        galaxy = (GalaxyView) findViewById(R.id.galaxy);
+        satellite = (SatelliteView) findViewById(R.id.satellite);
+        accuracy = (DonutProgress) findViewById(R.id.accuracy);
         satelliteCountView = (TextView) findViewById(R.id.satellite_count);
 
         //initialize effects
@@ -535,7 +555,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... voids) {
             if (game.getState().compareTo(STARTED) >= 0)
-                throw new State.StateOverException("Game has been started.");
+                throw new StateException("Game has been started.");
             Log.i(GAME_TAG, "Wait til satellites are ready.");
             while (!hasSatellites) {
                 try {
@@ -551,21 +571,23 @@ public class SatelliteHackActivity extends AppCompatActivity {
             Log.i(GAME_TAG, "Start Satellite Hack.");
             //start game UI
             rotateAnimator.start();
+//            alphaAnimator.start();
             noise.start();
             signal.start();
-            //start counting time
-            new CountDownTimer(TIME_LIMIT, 5000) {
+            //start counting time  *fix delay and last tick bug
+            new CountDownTimer(TIME_LIMIT + 400, TIME_LIMIT / 6) {
                 @Override
                 public void onTick(long l) {
-                    Log.v(GAME_TAG, String.format("%ds left", l / 1000));
+                    Log.v(GAME_TAG, String.format("%dms left", l));
+                    ping.decreasePing();
                 }
 
                 @Override
                 public void onFinish() {
                     try {
-                        gameOver(false);
                         Log.i(GAME_TAG, "Satellite Hack fail.(timer)");
-                    } catch (StateOverException e) {
+                        gameOver(false);
+                    } catch (StateException e) {
                         Log.v(GAME_TAG, "Game is over");
                     }
                 }
@@ -575,6 +597,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
             ImageView loading = ((ImageView) findViewById(R.id.loading));
             loading.setImageDrawable(null);
             findViewById(R.id.loading_bg).setVisibility(View.GONE);
+//            findViewById(R.id.loading).setVisibility(View.GONE);
         }
 
     }
@@ -610,23 +633,60 @@ public class SatelliteHackActivity extends AppCompatActivity {
     }
 
     public void hack(View view) {
-        if (!game.getState().equals(STARTED))
-            throw new StateOverException("Game is over or not started yet");
-        if (null == hackTarget)
-            throw new NoTargetException("No hacking target");
-        //try to remove target satellite
-        if (game.removeSatellite(hackTarget)) {
-            vibrator.vibrate(200);
-            hit.start();
-            int satelliteCount = game.countSatellite();
-            Log.i(GAME_TAG, String.format(
-                    "Satellite hack success. %d satellite(s)' left.", satelliteCount));
-            satelliteCountView.setText(String.valueOf(game.countSatellite()));
-            if (satelliteCount == 0) {
-                Log.i(GAME_TAG, "All satellites are hacked. Stage clear.");
-                gameOver(true);
+//        if (game.getState().equals(STARTED))
+//            throw new StateOverException("Game is over or not started yet");
+//        if (null == hackTarget)
+//            throw new NoTargetException("No hacking target");
+//        //try to remove target satellite
+//        if (game.removeSatellite(hackTarget)) {
+//            vibrator.vibrate(200);
+//            hit.start();
+//            int satelliteCount = game.countSatellite();
+//            Log.i(GAME_TAG, String.format(
+//                    "Satellite hack success. %d satellite(s)' left.", satelliteCount));
+//            satelliteCountView.setText(String.valueOf(game.countSatellite()));
+//            if (satelliteCount == 0) {
+//                Log.i(GAME_TAG, "All satellites are hacked. Stage clear.");
+//                gameOver(true);
+//            }
+//            hackTarget = null;
+//        }
+        new Hack().execute();
+    }
+
+    private class Hack extends AsyncTask<Void, Integer, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            satellite.setEnabled(false);
+        }
+
+        @Override
+        protected Void doInBackground(Void... aVoid) {
+            if (game.getState().equals(READY))
+                throw new StateException("Game not started yet");
+            if (null == hackTarget)
+                throw new NoTargetException("No hacking target");
+            //try to remove target satellite
+            if (game.removeSatellite(hackTarget)) {
+                vibrator.vibrate(200);
+                hit.start();
+                int satelliteCount = game.countSatellite();
+                Log.i(GAME_TAG, String.format(
+                        "Satellite hack success. %d satellite(s)' left.", satelliteCount));
+                publishProgress(game.countSatellite());
+                if (satelliteCount == 0) {
+                    Log.i(GAME_TAG, "All satellites are hacked. Stage clear.");
+                    gameOver(true);
+                }
+                hackTarget = null;
             }
-            hackTarget = null;
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            satelliteCountView.setText(String.valueOf(values[0]));
         }
     }
 
@@ -655,8 +715,10 @@ public class SatelliteHackActivity extends AppCompatActivity {
     }
 
     private void gameOver(boolean success, boolean finish) {
+        if (game.getState().compareTo(STARTED) < 0)
+            throw new StateException("Game is over.");
         if (game.getState().compareTo(OVER) >= 0)
-            throw new StateOverException("Game is over.");
+            return;
         Log.i(GAME_TAG, "Satellite Hack is over.");
         game.setState(OVER);
         sm.unregisterListener(seListener);
@@ -715,9 +777,9 @@ public class SatelliteHackActivity extends AppCompatActivity {
             new View.OnLongClickListener() {
         @Override
         public boolean onLongClick(View view) {
-            ((RelativeLayout)
-                    (findViewById(R.id.camera).getParent()
-            )).removeView(findViewById(R.id.camera));
+//            ((RelativeLayout)
+//                    (findViewById(R.id.camera).getParent()
+//            )).removeView(findViewById(R.id.camera));
             findViewById(R.id.author).setOnLongClickListener(null);
             return false;
         }

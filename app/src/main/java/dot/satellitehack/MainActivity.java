@@ -20,6 +20,7 @@ public class MainActivity extends AppCompatActivity {
         EditText countView = (EditText) findViewById(R.id.count);
         int level = Integer.parseInt(countView.getText().toString());
         Intent intent = new Intent(this, SatelliteHackActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         intent.putExtra("level", level);
         startActivityForResult(intent, SAT_HACK_ID);
     }
