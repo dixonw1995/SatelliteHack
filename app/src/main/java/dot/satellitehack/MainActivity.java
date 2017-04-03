@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         EditText countView = (EditText) findViewById(R.id.count);
         int level = Integer.parseInt(countView.getText().toString());
         Intent intent = new Intent(this, SatelliteHackActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+//        intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         intent.putExtra("level", level);
         startActivityForResult(intent, SAT_HACK_ID);
     }
@@ -46,5 +46,9 @@ public class MainActivity extends AppCompatActivity {
                 time.setText("");
             }
         }
+    }
+
+    public void gc(View view) {
+        System.gc();
     }
 }

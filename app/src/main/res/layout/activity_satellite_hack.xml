@@ -80,12 +80,20 @@
             app:donut_progress="0"
             app:donut_show_text="false" />
 
-        <dot.satellitehack.PingView
+        <!--dot.satellitehack.PingView
             android:id="@+id/ping"
             android:layout_width="120dp"
             android:layout_height="100dp"
             android:layout_margin="30dp"
-            android:scaleType="fitCenter" />
+            android:scaleType="fitCenter"
+            android:visibility="gone" /-->
+
+        <dot.satellitehack.Stopwatch
+            android:id="@+id/stopwatch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="30dp"
+            android:textSize="36sp" />
 
         <!--RelativeLayout
             android:id="@+id/ping_container"

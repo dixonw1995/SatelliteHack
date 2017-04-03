@@ -3,11 +3,13 @@ package dot.satellitehack;
 import android.Manifest;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -22,9 +24,10 @@ import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
-import android.os.CountDownTimer;
+import android.os.Build;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -34,6 +37,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -85,8 +89,10 @@ public class SatelliteHackActivity extends AppCompatActivity {
     private float[] magneticFieldValues = new float[3];
 
     //UI variables
+    private RelativeLayout thisLayout;
     private Camera camera;
-    private PingView ping;
+//    private PingView ping;
+    private Stopwatch stopwatch;
     private ImageView sight;
     private DonutProgress accuracy;
     private GalaxyView galaxy;
@@ -182,6 +188,43 @@ public class SatelliteHackActivity extends AppCompatActivity {
                 .show();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @Override
+    protected void onStop() {
+        super.onStop();
+//        for (ImageView iv : new ImageView[]{
+//                galaxy, satellite, sight,
+//                (ImageView) findViewById(R.id.sight_bg),
+//                (ImageView) findViewById(R.id.noise),
+//                (ImageView) findViewById(R.id.fail_message)}) {
+//            if (null == iv) continue;
+//            iv.getDrawable().setCallback(null);
+//            iv.setImageDrawable(null);
+//            iv.setImageBitmap(null);
+//        }
+//        galaxy.getDrawable().setCallback(null);
+//        satellite.getDrawable().setCallback(null);
+//        sight.getDrawable().setCallback(null);
+//        ping.getDrawable().setCallback(null);
+//        ((ImageView) findViewById(R.id.noise)).getDrawable().setCallback(null);
+//        ((ImageView) findViewById(R.id.fail_message)).getDrawable().setCallback(null);
+//        ((SurfaceView) findViewById(R.id.camera)).getHolder().getSurface().release();
+//        this.releaseInstance();
+        releaseLoadingScene();
+        releaseGameContent();
+        releaseFailScene();
+        thisLayout.removeAllViews();
+    }
+
+//    @Override
+//    public void finish() {
+////        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+////            finishAndRemoveTask();
+////        }
+////        else
+//            super.finish();
+//    }
+
     //wait until user turn on GPS and then get the satellites
     private class SatelliteFinder extends AsyncTask<Void, Void, Void> {
         private Toast message;
@@ -237,6 +280,12 @@ public class SatelliteHackActivity extends AppCompatActivity {
             locationManager.addGpsStatusListener(gsListener);
             locationManager.requestLocationUpdates(
                     bestProvider, 2000, 1, locationListener);
+        }
+
+        @Override
+        protected void onCancelled() {
+            locationManager.removeGpsStatusListener(gsListener);
+            locationManager.removeUpdates(locationListener);
         }
     }
 
@@ -470,6 +519,7 @@ public class SatelliteHackActivity extends AppCompatActivity {
                     Log.i(UI_TAG, "Turn off camera.");
                     camera.stopPreview();
                     camera.release();
+                    surfaceHolder.getSurface().release();
                 }
             }
         });
@@ -536,7 +586,9 @@ public class SatelliteHackActivity extends AppCompatActivity {
         initCamera();
 
         //prepare view objects
-        ping = (PingView) findViewById(R.id.ping);
+//        ping = (PingView) findViewById(R.id.ping);
+        thisLayout = (RelativeLayout) findViewById(R.id.activity_satellite_hack);
+        stopwatch = (Stopwatch) findViewById(R.id.stopwatch);
         sight = (ImageView) findViewById(R.id.sight);
 //        bullsEye = (ImageView) findViewById(R.id.bulls_eye);
         galaxy = (GalaxyView) findViewById(R.id.galaxy);
@@ -574,16 +626,9 @@ public class SatelliteHackActivity extends AppCompatActivity {
 //            alphaAnimator.start();
             noise.start();
             signal.start();
-            //start counting time  *fix delay and last tick bug
-            new CountDownTimer(TIME_LIMIT + 400, TIME_LIMIT / 6) {
+            stopwatch.setListener(new Stopwatch.Listener() {
                 @Override
-                public void onTick(long l) {
-                    Log.v(GAME_TAG, String.format("%dms left", l));
-                    ping.decreasePing();
-                }
-
-                @Override
-                public void onFinish() {
+                public void onTimesUp() {
                     try {
                         Log.i(GAME_TAG, "Satellite Hack fail.(timer)");
                         gameOver(false);
@@ -591,13 +636,38 @@ public class SatelliteHackActivity extends AppCompatActivity {
                         Log.v(GAME_TAG, "Game is over");
                     }
                 }
-            }.start();
+
+                @Override
+                public void onEvery100ms(long time) {
+                    Log.v(GAME_TAG, String.format("%dms left", time));
+                }
+            }).start(TIME_LIMIT);
+//            //start counting time  *fix delay and last tick bug
+//            new CountDownTimer(TIME_LIMIT + 400, 1000) {
+//                @Override
+//                public void onTick(long l) {
+//                    Log.v(GAME_TAG, String.format("%dms left", l));
+////                    ping.decreasePing();
+//                }
+//
+//                @Override
+//                public void onFinish() {
+//                    try {
+//                        Log.i(GAME_TAG, "Satellite Hack fail.(timer)");
+//                        gameOver(false);
+//                    } catch (StateException e) {
+//                        Log.v(GAME_TAG, "Game is over");
+//                    }
+//                }
+//            }.start();
             game.startTimer();
             //remove loading scene
-            ImageView loading = ((ImageView) findViewById(R.id.loading));
-            loading.setImageDrawable(null);
-            findViewById(R.id.loading_bg).setVisibility(View.GONE);
+//            ImageView loading = ((ImageView) findViewById(R.id.loading));
+//            loading.getDrawable().setCallback(null);
+//            loading.setImageDrawable(null);
+//            findViewById(R.id.loading_bg).setVisibility(View.GONE);
 //            findViewById(R.id.loading).setVisibility(View.GONE);
+            releaseLoadingScene();
         }
 
     }
@@ -715,13 +785,13 @@ public class SatelliteHackActivity extends AppCompatActivity {
     }
 
     private void gameOver(boolean success, boolean finish) {
-        if (game.getState().compareTo(STARTED) < 0)
-            throw new StateException("Game is over.");
+//        if (game.getState().compareTo(STARTED) < 0)
+//            throw new StateException("Game is over.");
         if (game.getState().compareTo(OVER) >= 0)
             return;
         Log.i(GAME_TAG, "Satellite Hack is over.");
         game.setState(OVER);
-        sm.unregisterListener(seListener);
+//        sm.unregisterListener(seListener);
         game.stopTimer();
 
         if (!success) {
@@ -736,16 +806,23 @@ public class SatelliteHackActivity extends AppCompatActivity {
             }
 
             //display noise scene to tell failure
-            Glide.with(this)
-                    .load(R.drawable.noise_gif)
-                    .asGif()
-                    .placeholder(R.color.black)
-                    .crossFade()
-                    .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                    .into((ImageView) findViewById(R.id.noise));
-            updateSound(0f);
-            findViewById(R.id.failure).setVisibility(View.VISIBLE);
-            Toast.makeText(this, "Game Over. Press BACK to leave", Toast.LENGTH_LONG).show();
+            thisLayout.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Glide.with(SatelliteHackActivity.this)
+                                            .load(R.drawable.noise_gif)
+                                            .asGif()
+                                            .placeholder(R.color.black)
+                                            .crossFade()
+                                            .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                                            .into((ImageView) findViewById(R.id.noise));
+                                    updateSound(0f);
+                                    findViewById(R.id.failure).setVisibility(View.VISIBLE);
+                                    Toast.makeText(SatelliteHackActivity.this,
+                                            "Game Over. Press BACK to leave",
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
         }
         else {
             Log.i(GAME_TAG, "User succeeds.");
@@ -754,6 +831,45 @@ public class SatelliteHackActivity extends AppCompatActivity {
             intent.putExtra(TIME, game.getTimeUsed());
             setResult(RESULT_OK, intent);
             finish();
+        }
+    }
+
+    private void releaseLoadingScene() {
+        findViewById(R.id.loading_bg).setVisibility(View.GONE);
+        ImageView loading = ((ImageView) findViewById(R.id.loading));
+        if (null == loading || null == loading.getDrawable()) return;
+        loading.setVisibility(View.GONE);
+        loading.getDrawable().setCallback(null);
+        loading.setImageDrawable(null);
+        if (null != satelliteFinder && !satelliteFinder.isCancelled())
+            satelliteFinder.cancel(false);
+        if (null != startGame && !startGame.isCancelled())
+            startGame.cancel(false);
+    }
+
+    private void releaseGameContent() {
+        sm.unregisterListener(seListener);
+        stopwatch.stop();
+        for (ImageView iv : new ImageView[]{
+                galaxy, satellite, sight,
+                (ImageView) findViewById(R.id.sight_bg)}) {
+            if (null == iv || null == iv.getDrawable()) continue;
+            iv.setVisibility(View.GONE);
+            iv.getDrawable().setCallback(null);
+            iv.setImageDrawable(null);
+            iv.setImageBitmap(null);
+        }
+    }
+
+    private void releaseFailScene() {
+        for (ImageView iv : new ImageView[]{
+                (ImageView) findViewById(R.id.noise),
+                (ImageView) findViewById(R.id.fail_message)}) {
+            if (null == iv || null == iv.getDrawable()) continue;
+            iv.setVisibility(View.GONE);
+            iv.getDrawable().setCallback(null);
+            iv.setImageDrawable(null);
+            iv.setImageBitmap(null);
         }
     }
 

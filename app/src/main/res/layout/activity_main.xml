@@ -50,4 +50,10 @@
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="67dp" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GC"
+        android:onClick="gc" />
+
 </RelativeLayout>
