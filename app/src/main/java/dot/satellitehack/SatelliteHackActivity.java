@@ -640,6 +640,14 @@ public class SatelliteHackActivity extends AppCompatActivity {
                 @Override
                 public void onEvery100ms(long time) {
                     Log.v(GAME_TAG, String.format("%dms left", time));
+                    if (time < TIME_LIMIT / 2)
+                        stopwatch.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                stopwatch.setTextColor(
+                                        getResources().getColor(R.color.red));
+                            }
+                        });
                 }
             }).start(TIME_LIMIT);
 //            //start counting time  *fix delay and last tick bug
