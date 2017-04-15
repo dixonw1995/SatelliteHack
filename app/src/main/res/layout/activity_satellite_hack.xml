@@ -7,13 +7,12 @@
     android:layout_height="match_parent"
     tools:context="dot.satellitehack.SatelliteHackActivity" >
 
-    <SurfaceView
+    <dot.satellitehack.CameraView
         android:id="@+id/camera"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <RelativeLayout
-        android:id="@+id/game_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 

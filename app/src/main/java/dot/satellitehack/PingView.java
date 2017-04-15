@@ -1,17 +1,8 @@
 package dot.satellitehack;
 
-import android.animation.AnimatorInflater;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.support.annotation.DrawableRes;
 import android.util.AttributeSet;
-import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
-import android.view.animation.AnimationUtils;
-import android.view.animation.LinearInterpolator;
-import android.view.animation.TranslateAnimation;
 
 import java.util.Arrays;
 import java.util.List;

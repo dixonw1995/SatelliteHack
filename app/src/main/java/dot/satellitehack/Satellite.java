@@ -32,11 +32,11 @@ class Satellite{
         return elevation;
     }
 
-    float getAccuracy() {
+    synchronized float getAccuracy() {
         return accuracy;
     }
 
-    void setAccuracy(float azimuth, float inclination) {
+    synchronized void setAccuracy(float azimuth, float inclination) {
         /*
         The best difference is 180. The worst is 0 or 360 which means the opposite direction.
         The equation gives the rate of how close the user's pointed at the satellite.

@@ -10,7 +10,7 @@ import java.util.Locale;
 import static dot.satellitehack.MathTools.*;
 
 enum State {
-    READY, STARTED, OVER, SUCCESS, FAILURE;
+    READY, ACTIVE, OVER, SUCCESS, FAILURE;
 
     //exception when operation doesn't match state
     static class StateException extends RuntimeException {
