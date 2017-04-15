@@ -31,7 +31,6 @@ public class CameraView extends SurfaceView {
 
     private void initCamera() {
         Log.i(UI_TAG, "Set surface view call back.");
-//        SurfaceView surfaceView = (SurfaceView) findViewById(R.id.camera);
         SurfaceHolder holder = this.getHolder();
         holder.setKeepScreenOn(true);
         holder.addCallback(new SurfaceHolder.Callback() {

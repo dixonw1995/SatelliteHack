@@ -49,7 +49,7 @@ class SatelliteFinder extends AsyncTask<Void, Void, Void> {
         this.showToast = showToast;
     }
 
-    public boolean isDone() {
+    boolean isDone() {
         return done;
     }
 

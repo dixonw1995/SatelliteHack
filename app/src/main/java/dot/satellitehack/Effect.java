@@ -43,7 +43,6 @@ class Effect {
         Log.i(UI_TAG, "Initialize animators.");
         rotate = ObjectAnimator.ofFloat(null, "rotation", 900f);
         rotate.setDuration(TIME_LIMIT);
-//        rotateAnimator.setInterpolator(countDownInterpolator);
         rotate.setInterpolator(linearInterpolator);
     }
 
@@ -57,7 +56,7 @@ class Effect {
         signal.pause();
     }
 
-    public void start() {
+    void start() {
         noise.start();
         signal.start();
         if (null != rotate.getTarget() && !rotate.isStarted())

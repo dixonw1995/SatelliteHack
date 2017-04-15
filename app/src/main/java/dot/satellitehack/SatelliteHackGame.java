@@ -14,20 +14,8 @@ enum State {
 
     //exception when operation doesn't match state
     static class StateException extends RuntimeException {
-        StateException(){
-            super();
-        }
-
         StateException(String message){
             super(message);
-        }
-
-        StateException(String message, Throwable cause){
-            super(message, cause);
-        }
-
-        StateException(Throwable cause){
-            super(cause);
         }
     }
 }
@@ -48,20 +36,12 @@ class SatelliteHackGame {
         endTime = new Time("GMT+8");
     }
 
-    public int getLevel() {
-        return level;
-    }
-
     void setLevel(int level) {
         this.level = level;
     }
 
     List<Satellite> getSatellites() {
         return satellites;
-    }
-
-    public void setSatellites(List<Satellite> satellites) {
-        this.satellites = satellites;
     }
 
     private void addSatellite(Satellite satellite) {
@@ -78,10 +58,6 @@ class SatelliteHackGame {
                 )
         );
         addSatellites(satList);
-    }
-
-    public Satellite getSatellite(int index) {
-        return satellites.get(index);
     }
 
     boolean removeSatellite(Satellite satellite) {
@@ -106,17 +82,9 @@ class SatelliteHackGame {
         }
     }
 
-    public Time getStartTime() {
-        return startTime;
-    }
-
     SatelliteHackGame startTimer() {
         startTime.setToNow();
         return this;
-    }
-
-    public Time getEndTime() {
-        return endTime;
     }
 
     SatelliteHackGame stopTimer() {
